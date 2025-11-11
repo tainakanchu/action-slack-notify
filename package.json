@@ -1,10 +1,10 @@
 {
   "name": "action-slack-notify",
-  "version": "3.0.0-beta.1",
+  "version": "3.0.0-beta.2",
   "description": "GitHub Action that sends customizable notifications to Slack without requiring Docker.",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsup src/index.ts --format=cjs --target=node20 --sourcemap --dts",
+    "build": "tsup --config tsup.config.ts",
     "typecheck": "tsc --noEmit",
     "prepare": "npm run build"
   },
