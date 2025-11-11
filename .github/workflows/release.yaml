@@ -1,26 +1,52 @@
+name: release
+
 on:
   push:
     tags:
       - "v*"
-name: Release Creation
+
+permissions:
+  contents: write
+
 jobs:
   release:
-    name: Create a Draft Release on GitHub
+    name: Create Draft Release
     runs-on: ubuntu-latest
     steps:
-    - name: Get Release Name
-      id: get_release_name
-      run: |
-        echo "release_name=${GITHUB_REF_NAME/v/Version }" >> $GITHUB_ENV
-    - name: Publish a Draft Release
-      uses: softprops/action-gh-release@v2
-      with:
-        body: |
-          ## What's Changed
+      - name: Checkout
+        uses: actions/checkout@v4
 
-          **Changelog:**
-        draft: true  # Creates a Draft Release
-        name: ${{ steps.get_release_name.outputs.release_name }}
-        generate_release_notes: true
-        append_body: true
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
 
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build action
+        run: npm run build
+
+      - name: Package dist
+        run: |
+          tar -czf dist.tar.gz -C dist .
+
+      - name: Resolve release name
+        id: release_name
+        run: |
+          echo "release_name=Version ${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish a Draft Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: |
+            ## What's Changed
+
+            **Changelog:**
+          draft: true
+          name: ${{ steps.release_name.outputs.release_name }}
+          generate_release_notes: true
+          append_body: true
+          files: |
+            dist.tar.gz

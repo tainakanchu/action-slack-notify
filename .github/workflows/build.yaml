@@ -1,25 +1,45 @@
+name: ci
+
 on:
   workflow_dispatch:
   push:
-    tags:
-      - '*'
+    branches:
+      - main
+      - master
+      - node-master
+  pull_request:
+    branches:
+      - '**'
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
-        steps:
-        - name: Checkout
-          uses: actions/checkout@v4
-        - name: install docker emulation
-          run: docker run --rm --privileged tonistiigi/binfmt:latest --install amd64,arm64
-        - name: Set up buildx
-          uses: docker/setup-buildx-action@v3
-        - name: Login to ghcr.io
-          run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-        - name: Build and push
-          run: |
-            docker buildx build --platform linux/amd64,linux/arm64 -t $(echo 'ghcr.io/${{ github.repository }}:${{ github.ref_name }}' | tr '[:upper:]' '[:lower:]') --push .
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Build action
+        run: npm run build
+
+      - name: Ensure dist/ is committed
+        run: |
+          if [[ -n "$(git status --short -- dist)" ]]; then
+            echo "::error::dist/ has uncommitted changes. Run 'npm run build' locally and commit the results."
+            git status --short -- dist
+            exit 1
+          fi

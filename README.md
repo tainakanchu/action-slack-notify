@@ -1,131 +1,111 @@
-This action is a part of [GitHub Actions Library](https://github.com/rtCamp/github-actions-library/) created by [rtCamp](https://github.com/rtCamp/).
+Originally forked from [rtCamp/action-slack-notify](https://github.com/rtCamp/action-slack-notify) and fully rewritten in TypeScript for ease of maintenance.
 
-# Slack Notify - GitHub Action
+# Slack Notify – GitHub Action
+
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 
+A lightweight Node.js 20 action that posts richly formatted messages (and optional file uploads) to Slack Channels, Threads, or DMs. The runtime is now pure TypeScript → JavaScript, so you no longer need Docker or a Go toolchain—`runs-on: ubuntu-*-slim` works out of the box.
 
-A [GitHub Action](https://github.com/features/actions) to send a message to a Slack channel.
+The `Site` and `SSH Host` fields automatically appear when this action runs after [Deploy WordPress](https://github.com/rtCamp/action-deploy-wordpress) (or any workflow that writes `.github/hosts.yml`).
 
-**Screenshot**
-
-<img width="485" alt="action-slack-notify-rtcamp" src="https://user-images.githubusercontent.com/4115/54996943-9d38c700-4ff0-11e9-9d35-7e2c16ef0d62.png">
-
-The `Site` and `SSH Host` details are only available if this action is run after [Deploy WordPress GitHub action](https://github.com/rtCamp/action-deploy-wordpress).
+> **Heads up**  
+> Version 3+ of this action is **not** a composite/Docker wrapper. Instead it executes `dist/index.js` directly under Node 20. Update your workflow to use `uses: tainakanchu/actions-slack-notify@v3` (or a specific tag) with no container step required.
 
 ## Usage
 
-You can use this action after any other action. Here is an example setup of this action:
-
-1. Create a `.github/workflows/slack-notify.yml` file in your GitHub repo.
-2. Add the following code to the `slack-notify.yml` file.
+### Basic webhook example
 
 ```yml
 on: push
 name: Slack Notification Demo
 jobs:
   slackNotification:
-    name: Slack Notification
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Slack Notification
-      uses: rtCamp/action-slack-notify@v2
-      env:
-        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+      - uses: actions/checkout@v4
+      - name: Slack Notification
+        uses: tainakanchu/actions-slack-notify@v3
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_MESSAGE: 'Deploy succeeded for ${{ github.ref }}'
 ```
 
-3. Create `SLACK_WEBHOOK` secret using [GitHub Action's Secret](https://help.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets#creating-encrypted-secrets-for-a-repository). You can [generate a Slack incoming webhook token from here](https://slack.com/apps/A0F7XDUAZ-incoming-webhooks).
+### Token (chat.postMessage) mode
 
-
-## Environment Variables
-
-By default, action is designed to run with minimal configuration but you can alter Slack notification using following environment variables:
-
-| Variable                 | Default                                               | Purpose                                                                                                                                                                                                                                                                                                                  |
-| ------------------------ | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| SLACK_CHANNEL            | Set during Slack webhook creation                     | Specify Slack channel in which message needs to be sent                                                                                                                                                                                                                                                                  |
-| SLACK_USERNAME           | `rtBot`                                               | Custom Slack Username sending the message. Does not need to be a "real" username.                                                                                                                                                                                                                                        |
-| SLACK_MSG_AUTHOR         | `$GITHUB_ACTOR` (The person who triggered action).    | GitHub username of the person who has triggered the action. In case you want to modify it, please specify correct GitHub username.                                                                                                                                                                                       |
-| SLACK_ICON               | ![rtBot Avatar](https://github.com/rtBot.png?size=32) | User/Bot icon shown with Slack message. It uses the URL supplied to this env variable to display the icon in slack message.                                                                                                                                                                                              |
-| SLACK_ICON_EMOJI         | -                                                     | User/Bot icon shown with Slack message, in case you do not wish to add a URL for slack icon as above, you can set slack emoji in this env variable. Example value: `:bell:` or any other valid slack emoji.                                                                                                              |
-| SLACK_COLOR              | `good` (green)                                        | You can pass `${{ job.status }}` for automatic coloring or an RGB value like `#efefef` which would change color on left side vertical line of Slack message. Other valid values for this field are: `success`, `cancelled` or `failure`.                                                                                 |
-| SLACK_LINK_NAMES         | -                                                     | If set to `true`, enable mention in Slack message.                                                                                                                                                                                                                                                                       |
-| SLACK_MESSAGE            | Generated from git commit message.                    | The main Slack message in attachment. It is advised not to override this.                                                                                                                                                                                                                                                |
-| SLACK_TITLE              | Message                                               | Title to use before main Slack message.                                                                                                                                                                                                                                                                                  |
-| SLACK_FOOTER             | Powered By rtCamp's GitHub Actions Library            | Slack message footer.                                                                                                                                                                                                                                                                                                    |
-| MSG_MINIMAL              | -                                                     | If set to `true`, removes: `Ref`, `Event`,  `Actions URL` and `Commit` from the message. You can optionally whitelist any of these 4 removed values by passing it comma separated to the variable instead of `true`. (ex: `MSG_MINIMAL: event` or `MSG_MINIMAL: ref,actions url`, etc.)                                  |
-| SLACKIFY_MARKDOWN        | -                                                     | If set to `true`, it will convert markdown to slack format. (ex: `*bold*` to `bold`) Note: This only works for custom messages and not for the default message generated by the action. Credits: [slackify-markdown-action](https://github.com/marketplace/actions/slack-markdown-converter)                             |
-| SLACK_THREAD_TS          | -                                                     | If you want to send message in a thread, you can pass the timestamp of the parent message to this variable. You can get the timestamp of the parent message from the message URL in Slack. (ex: `SLACK_THREAD_TS: 1586130833.000100`)                                                                                    |
-| SLACK_TOKEN              | -                                                     | If you want to send message to a channel using a slack token. You will need to pass a channel in order to send messages using token, requiring a value for ``SLACK_CHANNEL``. Note that in case both webhook url and token are provided, webhook url will be prioritized.                                                |
-| SLACK_MESSAGE_ON_SUCCESS | -                                                     | If set, will send the provided message instead of the default message when the passed status (through ``SLACK_COLOR``) is `success`.                                                                                                                                                                                     |
-| SLACK_MESSAGE_ON_FAILURE | -                                                     | If set, will send the provided message instead of the default message when the passed status (through ``SLACK_COLOR``) is `failure`.                                                                                                                                                                                     |
-| SLACK_MESSAGE_ON_CANCEL  | -                                                     | If set, will send the provided message instead of the default message when the passed status (through ``SLACK_COLOR``) is `cancelled`.                                                                                                                                                                                   |
-| SLACK_CUSTOM_PAYLOAD     | -                                                     | If you want to send a custom payload to slack, you can pass it as a string to this variable. This will override all other variables and send the custom payload to slack. Example: `SLACK_CUSTOM_PAYLOAD: '{"text": "Hello, World!"}'`, Note: This payload should be in JSON format, and is not validated by the action. |
-| SLACK_FILE_UPLOAD        | -                                                     | If you want to upload a file to slack, you can pass the file path to this variable. Example: `SLACK_FILE_UPLOAD: /path/to/file.txt`. Note: This file should be present in the repository, or github workspace. Otherwise, should be accessable in the container the action is running in.                                |
-| ENABLE_ESCAPES           | -                                                     | If set to `true`, will enable backslash escape sequences such as `\n`, `\t`, etc. in the message. Note: This only works for custom messages and not for the default message generated by the action.                                                                                                                     |
-
-
-You can see the action block with all variables as below:
+Provide both `SLACK_TOKEN` (Bot/User OAuth token) and `SLACK_CHANNEL`, optionally targeting a thread:
 
 ```yml
-    - name: Slack Notification
-      uses: rtCamp/action-slack-notify@v2
-      env:
-        SLACK_CHANNEL: general
-        SLACK_COLOR: ${{ job.status }} # or a specific color like 'good' or '#ff00ff'
-        SLACK_ICON: https://github.com/rtCamp.png?size=48
-        SLACK_MESSAGE: 'Post Content :rocket:'
-        SLACK_TITLE: Post Title
-        SLACK_USERNAME: rtCamp
-        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+      - name: Slack Notification via Bot Token
+        uses: tainakanchu/actions-slack-notify@v3
+        env:
+          SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL: 'C0123456789'
+          SLACK_THREAD_TS: '1734638290.123456'
+          SLACK_MESSAGE: ':rocket: Release ready!'
+          SLACK_COLOR: ${{ job.status }}
 ```
 
-Below screenshot help you visualize message part controlled by different variables:
+### File uploads
 
-<img width="600" alt="Screenshot_2019-03-26_at_5_56_05_PM" src="https://user-images.githubusercontent.com/4115/54997488-d1f94e00-4ff1-11e9-897f-a35ab90f525f.png">
-
-The `Site` and `SSH Host` details are only available if this action is run after [Deploy WordPress GitHub action](https://github.com/rtCamp/action-deploy-wordpress).
-
-## Hashicorp Vault (Optional) (Deprecated)
-
-This GitHub action supports [Hashicorp Vault](https://www.vaultproject.io/).
-
-To enable Hashicorp Vault support, please define following GitHub secrets:
-
-Variable      | Purpose                                                                       | Example Vaule
---------------|-------------------------------------------------------------------------------|-------------
-`VAULT_ADDR`  | [Vault server address](https://www.vaultproject.io/docs/commands/#vault_addr) | `https://example.com:8200`
-`VAULT_TOKEN` | [Vault token](https://www.vaultproject.io/docs/concepts/tokens.html)          | `s.gIX5MKov9TUp7iiIqhrP1HgN`
-
-You will need to change `secrets` line in `slack-notify.yml` file to look like below.
+Uploading build artifacts requires a Slack token (file uploads are not supported with incoming webhooks):
 
 ```yml
-on: push
-name: Slack Notification Demo
-jobs:
-  slackNotification:
-    name: Slack Notification
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Slack Notification
-      uses: rtCamp/action-slack-notify@v2
-      env:
-        VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
-        VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+      - name: Upload report
+        uses: tainakanchu/actions-slack-notify@v3
+        env:
+          SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL: 'C0123456789'
+          SLACK_FILE_UPLOAD: reports/summary.txt
+          SLACK_MESSAGE: 'See the attached test summary'
 ```
 
-GitHub action uses `VAULT_TOKEN` to connect to `VAULT_ADDR` to retrieve slack webhook from Vault.
+`SLACK_FILE_UPLOAD` can be absolute or relative to `GITHUB_WORKSPACE`. When provided the file is sent after the chat message succeeds.
 
-In the Vault, the Slack webhook should be setup as field `webhook` on path `secret/slack`.
+## Environment variables
 
-## Credits
-Source: [technosophos/slack-notify](https://github.com/technosophos/slack-notify)
+| Name | Default | Notes |
+| ---- | ------- | ----- |
+| `SLACK_WEBHOOK` | – | Incoming webhook URL. If set, WEBHOOK mode is used. |
+| `SLACK_TOKEN` | – | Bot/User OAuth token. Required for TOKEN mode or file uploads. |
+| `SLACK_CHANNEL` | – | Channel/DM for TOKEN mode and file uploads. Falls back to `.github/hosts.yml` if present. |
+| `SLACK_CUSTOM_PAYLOAD` | – | Raw JSON payload string; sent as-is to Slack. Skips all formatting logic. |
+| `SLACK_MESSAGE` | Commit message fallback | Main message body. Required unless commit data or `SLACK_CUSTOM_PAYLOAD` is supplied. |
+| `SLACK_MESSAGE_ON_SUCCESS` / `SLACK_MESSAGE_ON_FAILURE` / `SLACK_MESSAGE_ON_CANCEL` | – | Override text when `SLACK_COLOR` is `success`, `failure`, or `cancelled`. |
+| `SLACK_COLOR` | `good` | Accepts `good`, `warning`, `danger`, `success`, `failure`, `cancelled`, or any hex color. |
+| `SLACK_TITLE` | `Message` | Title for the main field. |
+| `SLACK_USERNAME` / `SLACK_ICON` / `SLACK_ICON_EMOJI` | `rtBot`, default avatar | Customize sender identity. |
+| `SLACK_LINK_NAMES` | – | Set to `1` to force Slack to resolve `@user` and `#channel` mentions. |
+| `SLACK_THREAD_TS` | – | Send message (and optional file upload) as a reply to an existing Slack thread. |
+| `SLACK_FILE_UPLOAD` | – | Relative/absolute path to upload after the message posts (TOKEN mode + `SLACK_CHANNEL` required). |
+| `SLACKIFY_MARKDOWN` | `false` | When `true`, applies GitHub-flavored Markdown → Slack formatting using `slackify-markdown`. |
+| `ENABLE_ESCAPES` | `false` | Interprets `\n`, `\t`, etc. inside message env vars after interpolation. |
+| `MSG_MINIMAL` | – | `true` shows only the main text. Provide a comma list (`ref,event,actions url,commit`) to keep specific fields. |
+| `SLACK_FOOTER` | Slack Notify attribution | Set to override the default footer message. |
+| `SITE_NAME` / `SITE_TITLE` / `HOST_NAME` / `HOST_TITLE` | – | Override host metadata (normally inferred from `.github/hosts.yml`). |
+
+All standard GitHub environment variables (e.g., `GITHUB_REF`, `GITHUB_EVENT_NAME`, `GITHUB_SHA`) are read directly—no inputs are required.
+
+## Optional `.github/hosts.yml`
+
+If your repository contains `.github/hosts.yml`, the action attempts to:
+
+- Derive `SLACK_CHANNEL` from `ci_script_options.slack-channel`.
+- Populate `Site` / `SSH Host` fields using `<branch>.deploy_path`, `<branch>.hostname`, and `<branch>.user`.
+
+This mirrors the behavior of the earlier shell scripts but without requiring rsync or bash glue.
+
+## Development
+
+The project is authored in TypeScript and bundled with `tsup`.
+
+```bash
+npm install
+npm run typecheck
+npm run build
+```
+
+Publishing the action requires committing the generated `dist/` files.
 
 ## License
 
-[MIT](LICENSE) © 2022 rtCamp
-
-## Does this interest you?
-
-<a href="https://rtcamp.com/"><img src="https://rtcamp.com/wp-content/uploads/sites/2/2019/04/github-banner@2x.png" alt="Join us at rtCamp, we specialize in providing high performance enterprise WordPress solutions"></a>
+MIT © tainakanchu (with thanks to rtCamp for the original project)

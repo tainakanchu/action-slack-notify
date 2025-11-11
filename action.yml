@@ -1,8 +1,8 @@
 name: "Slack Notify"
 description: "Send a notification to Slack directly from GitHub Actions without Docker."
-author: "rtCamp"
+author: "tainakanchu"
 runs:
-  using: "node24"
+  using: "node20"
   main: "dist/index.js"
 branding:
   icon: "bell"

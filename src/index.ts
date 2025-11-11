@@ -373,7 +373,7 @@ function buildPayload(params: {
   const fallback = getEnv('SLACK_MESSAGE') ||
     `GITHUB_ACTION=${getEnv('GITHUB_ACTION')} \n GITHUB_ACTOR=${githubActor} \n GITHUB_EVENT_NAME=${githubEventName} \n GITHUB_REF=${githubRef} \n GITHUB_REPOSITORY=${repository} \n GITHUB_WORKFLOW=${workflow}`;
 
-  const footerText = footer || `<https://github.com/rtCamp/github-actions-library|Powered By rtCamp's GitHub Actions Library> | <${githubRun}|Triggered on this workflow run>`;
+  const footerText = footer || `<https://github.com/tainakanchu/actions-slack-notify|Slack Notify Action> | <${githubRun}|Triggered on this workflow run>`;
 
   const channel = getEnv('SLACK_CHANNEL') || hostsContext.channel || '';
 
